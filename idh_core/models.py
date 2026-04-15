@@ -214,3 +214,21 @@ def compute_gradient_penalty(discriminator, real_samples, fake_samples, device):
     )[0]
     gradients = gradients.view(gradients.size(0), -1)
     return ((gradients.norm(2, dim=1) - 1) ** 2).mean()
+
+class LSTM_CNN(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size, num_conv_filters, length):
+        super(LSTM_CNN, self).__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers=2, batch_first=True)
+        self.conv1 = nn.Conv1d(hidden_size, num_conv_filters, kernel_size=1)
+        self.fc1 = nn.Linear(num_conv_filters * length, 128)  
+        self.fc2 = nn.Linear(128, output_size)  
+
+    def forward(self, x):
+        lstm_out, _ = self.lstm(x)
+        lstm_out = lstm_out.permute(0, 2, 1)
+        cnn_out = self.conv1(lstm_out)
+        cnn_out = cnn_out.view(cnn_out.size(0), -1)
+        fc1_out = torch.relu(self.fc1(cnn_out)) 
+        output = self.fc2(fc1_out)
+        
+        return output
