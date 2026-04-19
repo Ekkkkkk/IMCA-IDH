@@ -1,11 +1,24 @@
 import numpy as np
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, StackingClassifier
+from sklearn.svm import SVC
 
 from .training import calculate_binary_metrics
 
 
 def fit_logistic_meta_learner(train_meta_features, train_labels, test_meta_features=None, test_labels=None):
-    model = LogisticRegression(random_state=42)
+    meta_model = LogisticRegression()
+    base_models = [
+        ('rf', RandomForestClassifier(random_state=42, n_estimators=100)),
+        ('gb', GradientBoostingClassifier(random_state=42)),
+        ('lg', LogisticRegression(random_state=42)),
+        ('svc', SVC(probability=True, kernel='rbf',random_state=42))
+    ]
+    model = StackingClassifier(
+        estimators=base_models,
+        final_estimator=meta_model,
+        cv=5
+    )
     model.fit(train_meta_features, train_labels)
     outputs = {"model": model}
 
